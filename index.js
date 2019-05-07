@@ -26,6 +26,7 @@ app.get("/auth", function(req, res) {
 });
 
 app.get("/redirect", function(req, res) {
+  // LaunchDarkly's OAuth implementation requires secret credentials to be placed in the POST body or as query parameters
   launchDarklyAuth.code
     .getToken(req.originalUrl, {
       query: {
@@ -37,6 +38,7 @@ app.get("/redirect", function(req, res) {
       console.log(user); //=> { accessToken: '...', tokenType: 'bearer', ... }
 
       // Refresh the current users access token.
+      // This should not need to be done immediately after getting a new token. This is just a demo to show how to refresh a token
       user
         .refresh({
           query: {

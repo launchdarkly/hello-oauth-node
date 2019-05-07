@@ -8,7 +8,18 @@
   "version": "1.0.0",
   "description": "LaunchDarkly OAuth 2.0 starter project",
   "main": "index.js",
-  "repository": "git@github.com:launchdarkly/hello-aouth-node.git",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/launchdarkly/hello-aouth-node.git"
+  },
   "author": "Henry Barrow <hbarrow@launchdarkly.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/launchdarkly/hello-aouth-node/issues"
+  },
+  "homepage": "https://github.com/launchdarkly/hello-aouth-node#readme",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
 }
