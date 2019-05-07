@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "axios": "0.18.0",
+    "client-oauth2": "4.2.3",
+    "express": "4.16.4"
+  },
+  "name": "hello-aouth-node",
+  "version": "1.0.0",
+  "description": "LaunchDarkly OAuth 2.0 starter project",
+  "main": "index.js",
+  "repository": "git@github.com:launchdarkly/hello-aouth-node.git",
+  "author": "Henry Barrow <hbarrow@launchdarkly.com>",
+  "license": "MIT"
+}
