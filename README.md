@@ -1,6 +1,6 @@
 # hello-aouth-node
 
-LaunchDarkly OAuth Node JS starter project
+LaunchDarkly OAuth Node JS starter project. A functional OAuth example using the [client-oauth2](https://github.com/mulesoft/js-client-oauth2) library can be seen in `index.js`
 
 ## Usage Guide
 
