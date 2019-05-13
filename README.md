@@ -1,4 +1,4 @@
-# hello-aouth-node
+# hello-oauth-node
 
 LaunchDarkly OAuth Node JS starter project
 
