@@ -49,24 +49,24 @@ app.get('/redirect', function(req, res) {
         .then(function(updatedUser) {
           console.log('Token successfully updated:', updatedUser !== user); //=> true
           console.log('New OAuth Token:', updatedUser.accessToken);
-        });
 
-      // The token should ideally be saved in the database at this point
+          // The token should ideally be saved in the database at this point
 
-      // Token usage demonstration:
-      // Sign API requests on behalf of the current user.
-      const testReq = updatedUser.sign({
-        method: 'get',
-        url: 'https://app.launchdarkly.com/trust/oauth/test',
-      });
+          // Token usage demonstration:
+          // Sign API requests on behalf of the current user.
+          const testReq = updatedUser.sign({
+            method: 'get',
+            url: 'https://app.launchdarkly.com/trust/oauth/test',
+          });
 
-      axios(testReq)
-        .then(testRes => {
-          return res.send(testRes.data);
-        })
-        .catch(e => {
-          console.log(e);
-          return res.send('There was an error testing the OAuth token');
+          axios(testReq)
+            .then(testRes => {
+              return res.send(testRes.data);
+            })
+            .catch(e => {
+              console.log(e);
+              return res.send('There was an error testing the OAuth token');
+            });
         });
     })
     .catch(e => {
