@@ -15,7 +15,7 @@ var launchDarklyAuth = new ClientOAuth2({
   accessTokenUri: "https://app.launchdarkly.com/trust/oauth/token",
   authorizationUri: "https://app.launchdarkly.com/trust/oauth/authorize",
   redirectUri: `http://localhost:${port}/redirect`,
-  scopes: ["info", "read", "write"]
+  scopes: ["info", "reader", "writer"]
 });
 
 app.get("/", (req, res) => res.sendFile("index.html", { root: __dirname }));
