@@ -1,7 +1,8 @@
 {
   "dependencies": {
-    "axios": "0.18.0",
+    "axios": "^0.19.0",
     "client-oauth2": "4.2.3",
+    "dotenv": "^8.0.0",
     "express": "4.16.4"
   },
   "name": "hello-aouth-node",
@@ -20,6 +21,7 @@
   "homepage": "https://github.com/launchdarkly/hello-aouth-node#readme",
   "devDependencies": {},
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   }
 }

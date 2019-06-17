@@ -1,21 +1,25 @@
+'use strict';
+
+require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
 const ClientOAuth2 = require('client-oauth2');
 
 // After registering your OAuth client you will be given the following credentials
-const clientId = 'CLIENT_ID_HERE';
-const clientSecret = 'CLIENT_SECRET_HERE';
+const CLIENT_ID = process.env.OAUTH_CLIENT_ID;
+const CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
+const LD_DOMAIN = process.env.LD_DOMAIN || 'https://app.launchdarkly.com';
 const port = 4000;
 
 const app = express();
 
 var launchDarklyAuth = new ClientOAuth2({
-  clientId: clientId,
-  clientSecret: clientSecret,
-  accessTokenUri: 'https://app.launchdarkly.com/trust/oauth/token',
-  authorizationUri: 'https://app.launchdarkly.com/trust/oauth/authorize',
+  clientId: CLIENT_ID,
+  clientSecret: CLIENT_SECRET,
+  accessTokenUri: `${LD_DOMAIN}/trust/oauth/token`,
+  authorizationUri: `${LD_DOMAIN}/trust/oauth/authorize`,
   redirectUri: `http://localhost:${port}/redirect`,
-  scopes: ['info', 'reader', 'writer'],
+  scopes: ['reader', 'writer'],
 });
 
 app.get('/', (req, res) => res.sendFile('index.html', { root: __dirname }));
@@ -56,7 +60,7 @@ app.get('/redirect', function(req, res) {
           // Sign API requests on behalf of the current user.
           const testReq = updatedUser.sign({
             method: 'get',
-            url: 'https://app.launchdarkly.com/trust/oauth/test',
+            url: `${LD_DOMAIN}/trust/oauth/test`,
           });
 
           axios(testReq)
