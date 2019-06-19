@@ -12,7 +12,7 @@ const ClientOAuth2 = require('client-oauth2');
 const CLIENT_ID = process.env.OAUTH_CLIENT_ID;
 const CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
 const LD_DOMAIN = process.env.LD_DOMAIN || 'https://app.launchdarkly.com';
-const port = 4000;
+const PORT = process.env.PORT || 4000;
 
 const app = express();
 app.set('view engine', 'pug');
@@ -29,7 +29,7 @@ var launchDarklyAuth = new ClientOAuth2({
   clientSecret: CLIENT_SECRET,
   accessTokenUri: `${LD_DOMAIN}/trust/oauth/token`,
   authorizationUri: `${LD_DOMAIN}/trust/oauth/authorize`,
-  redirectUri: `http://localhost:${port}/redirect`,
+  redirectUri: `http://localhost:${PORT}/redirect`,
   scopes: ['writer'],
 });
 
@@ -135,4 +135,4 @@ app.get('/refresh', function(req, res) {
     });
 });
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+app.listen(PORT, () => console.log(`Example app listening on port ${PORT}!`));
