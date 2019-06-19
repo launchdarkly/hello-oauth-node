@@ -13,6 +13,7 @@ const CLIENT_ID = process.env.OAUTH_CLIENT_ID;
 const CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
 const LD_DOMAIN = process.env.LD_DOMAIN || 'https://app.launchdarkly.com';
 const PORT = process.env.PORT || 4000;
+const REDIRECT_URI = process.env.REDIRECT_URI || `http://localhost:${PORT}/redirect`;
 
 const app = express();
 app.set('view engine', 'pug');
@@ -29,7 +30,7 @@ var launchDarklyAuth = new ClientOAuth2({
   clientSecret: CLIENT_SECRET,
   accessTokenUri: `${LD_DOMAIN}/trust/oauth/token`,
   authorizationUri: `${LD_DOMAIN}/trust/oauth/authorize`,
-  redirectUri: `http://localhost:${PORT}/redirect`,
+  redirectUri: REDIRECT_URI,
   scopes: ['writer'],
 });
 
