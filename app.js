@@ -14,14 +14,16 @@ const CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
 const LD_DOMAIN = process.env.LD_DOMAIN || 'https://app.launchdarkly.com';
 const PORT = process.env.PORT || 4000;
 const REDIRECT_URI = process.env.REDIRECT_URI || `http://localhost:${PORT}/redirect`;
+const COOKIE_SESSION_SECRET = process.env.COOKIE_SESSION_SECRET || 'Super Secure Cookie Session Secret';
 
 const app = express();
 app.set('view engine', 'pug');
+app.use(express.static('public'));
 app.use(
   cookieSession({
     name: 'session',
-    secret: 'Super Secure Cookie Session Secret',
-    maxAge: 2 * 60 * 60 * 1000, // 2 hours
+    secret: COOKIE_SESSION_SECRET,
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 Days
   }),
 );
 

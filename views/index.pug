@@ -1,21 +1,22 @@
 html
   head
+    link(rel='stylesheet', href='styles.css')
     title Hello LaunchDarkly OAuth
   body
-    div
+    div(class='container')
       h1= message
-    if !loggedIn
-      h3
-        a(href="/auth") Authorize this app
-    else
-      div
-        h3 This token expires in #{expiresIn}. #[a(href="/refresh") Refresh it now]
-      div
-        p 
-          | You can test LaunchDarkly GET requests using this app by navigating to 
-          | #[code /get/some-endpoint]. For example #[a(href="/get/projects") /get/projects]
-      div
-        p To test with curl use:
-          pre= `curl -X GET ${apiUrl}/projects -H 'Authorization: Bearer ${token}'`
-      div
-        a(href="/logout") log out
+      if !loggedIn
+        h3
+          a(href="/auth") Authorize this app
+      else
+        div
+          h3 This token expires in #{expiresIn}. #[a(href="/refresh") Refresh it now]
+        div
+          p 
+            | You can test LaunchDarkly GET requests using this app by navigating to 
+            | #[code /get/some-endpoint]. For example #[a(href="/get/projects") /get/projects]
+        div
+          p To test with curl use:
+            pre= `curl -X GET ${apiUrl}/projects -H 'Authorization: Bearer ${token}'`
+        div
+          a(href="/logout") log out
