@@ -98,10 +98,14 @@ app.get('/redirect', function(req, res) {
       console.log(token); //=> { accessToken: '...', tokenType: 'bearer', ... }
       // The token should ideally be saved in the database at this point
       req.session.oauthTokenData = {
-        access: updatedToken.accessToken,
-        refresh: updatedToken.refreshToken,
-        expires: updatedToken.expires,
+        access: token.accessToken,
+        refresh: token.refreshToken,
+        expires: token.expires,
       };
+      res.redirect('/');
+    })
+    .catch(e => {
+      res.send(e.message);
     });
 });
 
@@ -133,6 +137,9 @@ app.get('/refresh', function(req, res) {
         expires: updatedToken.expires,
       };
       res.redirect('/');
+    })
+    .catch(e => {
+      res.send(e.message);
     });
 });
 
