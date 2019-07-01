@@ -2,6 +2,8 @@
 
 LaunchDarkly OAuth Node JS starter project. A functional OAuth example using the [client-oauth2](https://github.com/mulesoft/js-client-oauth2) library can be seen in `app.js`
 
+This app is deployed against LaunchDarkly's staging instance here: https://ld-hello-oauth.herokuapp.com/
+
 ## Usage Guide
 
 1. Run `npm install`
