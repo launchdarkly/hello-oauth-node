@@ -3,7 +3,6 @@
 require('dotenv').config();
 const express = require('express');
 const cookieSession = require('cookie-session');
-const pug = require('pug');
 const axios = require('axios');
 const moment = require('moment');
 const ClientOAuth2 = require('client-oauth2');

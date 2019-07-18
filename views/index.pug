@@ -10,11 +10,16 @@ html
           a(href="/auth") Authorize this app
       else
         div
-          h3 This token expires in #{expiresIn}. #[a(href="/refresh") Refresh it now]
+          h3 This token expires #{expiresIn}. #[a(href="/refresh") Refresh it now]
         div
           p 
             | You can test LaunchDarkly GET requests using this app by navigating to 
-            | #[code /get/some-endpoint]. For example #[a(href="/get/projects") /get/projects]
+            | #[code /get/some-endpoint]. 
+          p For example: 
+          ul
+            li #[a(href="/get/projects/default") /get/projects/default]
+            li #[a(href="get/projects/default/environments/production") /get/projects/default/environments/production]
+            li #[a(href="/get/flags/default") /get/flags/default]
         div
           p To test with curl use:
             pre= `curl -X GET ${apiUrl}/projects -H 'Authorization: Bearer ${token}'`
