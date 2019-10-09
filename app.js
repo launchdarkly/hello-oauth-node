@@ -87,14 +87,8 @@ app.get('/get/:path*', function(req, res) {
 });
 
 app.get('/redirect', function(req, res) {
-  // LaunchDarkly's OAuth implementation requires secret credentials to be placed in the POST body or as query parameters
   launchDarklyAuth.code
-    .getToken(req.originalUrl, {
-      query: {
-        client_id: launchDarklyAuth.options.clientId,
-        client_secret: launchDarklyAuth.options.clientSecret,
-      },
-    })
+    .getToken(req.originalUrl)
     .then(function(token) {
       console.log(token); //=> { accessToken: '...', tokenType: 'bearer', ... }
       // The token should ideally be saved in the database at this point
@@ -120,12 +114,7 @@ app.get('/refresh', function(req, res) {
     'bearer',
   );
   token
-    .refresh({
-      query: {
-        client_id: launchDarklyAuth.options.clientId,
-        client_secret: launchDarklyAuth.options.clientSecret,
-      },
-    })
+    .refresh()
     .then(updatedToken => {
       console.log('Token successfully updated:', updatedToken !== token); //=> true
       console.log('New OAuth Token:', updatedToken.accessToken);
