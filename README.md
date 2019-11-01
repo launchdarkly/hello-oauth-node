@@ -9,8 +9,8 @@ See [Authorizing OAuth Applications](https://docs.launchdarkly.com/docs/authoriz
 ## Usage Guide
 
 1. Register a new OAuth App with LaunchDarkly with a redirect_uri of `http://localhost:4000/redirect`.
-2. Clone this repop and run `npm install`
-3. Create a `.env` file with the following required environment variables (LaunchDarkly provides this information after registering your app):
+2. Clone this repo and run `npm install`
+3. Create a `.env` file with the following required environment variables (LunchDarkly provides this information after registering your app):
    - `OAUTH_CLIENT_ID`
    - `OAUTH_CLIENT_SECRET`
 4. Run `node app.js` to start the express server.
