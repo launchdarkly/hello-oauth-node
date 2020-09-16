@@ -41,11 +41,18 @@ app.get('/', (req, res) => {
     message: 'Hello LaunchDarkly OAuth',
     apiUrl: `${LD_DOMAIN}/api/v2`,
   };
-  if (req.session.oauthTokenData) {
+  const { oauthTokenData, memberInfo } = req.session;
+  if (oauthTokenData) {
     context.loggedIn = true;
-    context.message = `Your OAuth token is: ${req.session.oauthTokenData.access}`;
-    context.token = req.session.oauthTokenData.access;
-    context.expiresIn = moment(req.session.oauthTokenData.expires).fromNow();
+    context.tokenMessage = `Your OAuth token is: ${oauthTokenData.access}`;
+    context.token = oauthTokenData.access;
+    context.expiresIn = moment(oauthTokenData.expires).fromNow();
+  }
+
+  if (memberInfo) {
+    const name = [memberInfo.firstName, memberInfo.lastName].join(' ');
+    const displayName = name.length > 0 ? name : memberInfo.email;
+    context.message = `Hello, ${displayName}`;
   }
   res.render('index', context);
 });
@@ -57,13 +64,13 @@ app.get('/logout', (req, res) => {
 });
 
 // Begin the OAuth 2.0 flow
-app.get('/auth', function(req, res) {
+app.get('/auth', function (req, res) {
   var uri = launchDarklyAuth.code.getUri();
   res.redirect(uri);
 });
 
 // Make any GET request to LaunchDarkly's API using URL parameters
-app.get('/get/:path*', function(req, res) {
+app.get('/get/:path*', function (req, res) {
   if (req.session.oauthTokenData === undefined) {
     res.redirect('/');
   }
@@ -78,18 +85,18 @@ app.get('/get/:path*', function(req, res) {
     url: `${LD_DOMAIN}/api/v2/${endpoint}`,
   });
   axios(ldReq)
-    .then(testRes => {
+    .then((testRes) => {
       return res.send(testRes.data);
     })
-    .catch(e => {
+    .catch((e) => {
       return res.send(e.toJSON());
     });
 });
 
-app.get('/redirect', function(req, res) {
+app.get('/redirect', function (req, res) {
   launchDarklyAuth.code
     .getToken(req.originalUrl)
-    .then(function(token) {
+    .then(function (token) {
       console.log(token); //=> { accessToken: '...', tokenType: 'bearer', ... }
       // The token should ideally be saved in the database at this point
       req.session.oauthTokenData = {
@@ -97,14 +104,26 @@ app.get('/redirect', function(req, res) {
         refresh: token.refreshToken,
         expires: token.expires,
       };
-      res.redirect('/');
+
+      // use the token to get the user's member infomration and save it in the session
+      const ldReq = token.sign({
+        method: 'get',
+        url: `${LD_DOMAIN}/api/v2/members/me`,
+      });
+      axios(ldReq)
+        .then((memberResponse) => {
+          const { firstName, lastName, role, email, customRoles } = memberResponse.data;
+          req.session.memberInfo = { firstName, lastName, role, email, customRoles };
+          res.redirect('/');
+        })
+        .catch((e) => res.send(e.message));
     })
-    .catch(e => {
+    .catch((e) => {
       res.send(e.message);
     });
 });
 
-app.get('/refresh', function(req, res) {
+app.get('/refresh', function (req, res) {
   if (req.session.oauthTokenData === undefined) {
     res.redirect('/');
   }
@@ -115,7 +134,7 @@ app.get('/refresh', function(req, res) {
   );
   token
     .refresh()
-    .then(updatedToken => {
+    .then((updatedToken) => {
       console.log('Token successfully updated:', updatedToken !== token); //=> true
       console.log('New OAuth Token:', updatedToken.accessToken);
 
@@ -128,7 +147,7 @@ app.get('/refresh', function(req, res) {
       };
       res.redirect('/');
     })
-    .catch(e => {
+    .catch((e) => {
       res.send(e.message);
     });
 });
