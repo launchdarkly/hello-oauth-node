@@ -105,7 +105,7 @@ app.get('/redirect', function (req, res) {
         expires: token.expires,
       };
 
-      // use the token to get the user's member infomration and save it in the session
+      // use the token to get the user's member information and save it in the session
       const ldReq = token.sign({
         method: 'get',
         url: `${LD_DOMAIN}/api/v2/members/me`,
