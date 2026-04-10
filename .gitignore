@@ -62,3 +62,5 @@ typings/
 
 # heroku secrets
 heroku_secrets.txt
+
+.claude/
