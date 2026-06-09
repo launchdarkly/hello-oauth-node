@@ -7,6 +7,13 @@ const axios = require('axios');
 const moment = require('moment');
 const ClientOAuth2 = require('client-oauth2');
 
+// Decode a JWT payload without verifying the signature (for display purposes)
+function decodeJwtPayload(token) {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  return JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+}
+
 // After registering your OAuth client you will be given the following credentials
 const CLIENT_ID = process.env.OAUTH_CLIENT_ID;
 const CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
@@ -54,18 +61,34 @@ app.get('/', (req, res) => {
     const displayName = name.length > 0 ? name : memberInfo.email;
     context.message = `Hello, ${displayName}`;
   }
+
+  if (req.session.idTokenClaims) {
+    context.isOidc = true;
+    context.idTokenClaims = JSON.stringify(req.session.idTokenClaims, null, 2);
+    context.idTokenRaw = req.session.idTokenRaw;
+    context.oidcUserInfo = JSON.stringify(req.session.oidcUserInfo, null, 2);
+  }
+
   res.render('index', context);
 });
 
-// Delete cookie-session data and go home
+// Delete session data and go home
 app.get('/logout', (req, res) => {
-  delete req.session.oauthTokenData;
+  req.session = null;
   res.redirect('/');
 });
 
-// Begin the OAuth 2.0 flow
+// Begin the standard OAuth 2.0 flow
 app.get('/auth', function (req, res) {
+  req.session.useOidc = false;
   var uri = launchDarklyAuth.code.getUri();
+  res.redirect(uri);
+});
+
+// Begin the OIDC flow (adds openid scope, uses /oidc/token endpoint)
+app.get('/auth/oidc', function (req, res) {
+  req.session.useOidc = true;
+  var uri = launchDarklyAuth.code.getUri({ scopes: ['writer', 'openid'] });
   res.redirect(uri);
 });
 
@@ -94,62 +117,153 @@ app.get('/get/:path*', function (req, res) {
 });
 
 app.get('/redirect', function (req, res) {
-  launchDarklyAuth.code
-    .getToken(req.originalUrl)
-    .then(function (token) {
-      console.log(token); //=> { accessToken: '...', tokenType: 'bearer', ... }
-      // The token should ideally be saved in the database at this point
-      req.session.oauthTokenData = {
-        access: token.accessToken,
-        refresh: token.refreshToken,
-        expires: token.expires,
-      };
+  if (req.session.useOidc) {
+    // OIDC flow: manually exchange the authorization code at the OIDC token endpoint
+    const url = new URL(req.originalUrl, `http://localhost:${PORT}`);
+    const code = url.searchParams.get('code');
 
-      // use the token to get the user's member information and save it in the session
-      const ldReq = token.sign({
-        method: 'get',
-        url: `${LD_DOMAIN}/api/v2/members/me`,
+    const params = new URLSearchParams();
+    params.append('grant_type', 'authorization_code');
+    params.append('code', code);
+    params.append('redirect_uri', REDIRECT_URI);
+    params.append('client_id', CLIENT_ID);
+    params.append('client_secret', CLIENT_SECRET);
+
+    axios
+      .post(`${LD_DOMAIN}/trust/oidc/token`, params)
+      .then(function (tokenResponse) {
+        const data = tokenResponse.data;
+        req.session.oauthTokenData = {
+          access: data.access_token,
+          refresh: data.refresh_token,
+          expires: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : null,
+        };
+
+        // Decode the ID token immediately (it expires in ~5 seconds)
+        if (data.id_token) {
+          req.session.idTokenRaw = data.id_token;
+          req.session.idTokenClaims = decodeJwtPayload(data.id_token);
+        }
+
+        // Fetch userinfo and member info in parallel
+        return Promise.all([
+          axios.get(`${LD_DOMAIN}/trust/oidc/userinfo`, {
+            headers: { Authorization: `Bearer ${data.access_token}` },
+          }),
+          axios.get(`${LD_DOMAIN}/api/v2/members/me`, {
+            headers: { Authorization: `Bearer ${data.access_token}` },
+          }),
+        ]);
+      })
+      .then(function ([userInfoResponse, memberResponse]) {
+        req.session.oidcUserInfo = userInfoResponse.data;
+        const { firstName, lastName, role, email, customRoles } = memberResponse.data;
+        req.session.memberInfo = { firstName, lastName, role, email, customRoles };
+        res.redirect('/');
+      })
+      .catch((e) => res.send(e.message));
+  } else {
+    // Standard OAuth flow
+    launchDarklyAuth.code
+      .getToken(req.originalUrl)
+      .then(function (token) {
+        console.log(token); //=> { accessToken: '...', tokenType: 'bearer', ... }
+        req.session.oauthTokenData = {
+          access: token.accessToken,
+          refresh: token.refreshToken,
+          expires: token.expires,
+        };
+
+        const ldReq = token.sign({
+          method: 'get',
+          url: `${LD_DOMAIN}/api/v2/members/me`,
+        });
+        axios(ldReq)
+          .then((memberResponse) => {
+            const { firstName, lastName, role, email, customRoles } = memberResponse.data;
+            req.session.memberInfo = { firstName, lastName, role, email, customRoles };
+            res.redirect('/');
+          })
+          .catch((e) => res.send(e.message));
+      })
+      .catch((e) => {
+        res.send(e.message);
       });
-      axios(ldReq)
-        .then((memberResponse) => {
-          const { firstName, lastName, role, email, customRoles } = memberResponse.data;
-          req.session.memberInfo = { firstName, lastName, role, email, customRoles };
-          res.redirect('/');
-        })
-        .catch((e) => res.send(e.message));
-    })
-    .catch((e) => {
-      res.send(e.message);
-    });
+  }
 });
 
 app.get('/refresh', function (req, res) {
   if (req.session.oauthTokenData === undefined) {
     res.redirect('/');
+    return;
   }
-  const token = launchDarklyAuth.createToken(
-    req.session.oauthTokenData.access,
-    req.session.oauthTokenData.refresh,
-    'bearer',
-  );
-  token
-    .refresh()
-    .then((updatedToken) => {
-      console.log('Token successfully updated:', updatedToken !== token); //=> true
-      console.log('New OAuth Token:', updatedToken.accessToken);
 
-      // The token should ideally be saved in the database at this point
-      // This example stores the token information in the cookie-session
-      req.session.oauthTokenData = {
-        access: updatedToken.accessToken,
-        refresh: updatedToken.refreshToken,
-        expires: updatedToken.expires,
-      };
-      res.redirect('/');
+  if (req.session.useOidc) {
+    // OIDC refresh: manually POST to the OIDC token endpoint
+    const params = new URLSearchParams();
+    params.append('grant_type', 'refresh_token');
+    params.append('refresh_token', req.session.oauthTokenData.refresh);
+    params.append('client_id', CLIENT_ID);
+    params.append('client_secret', CLIENT_SECRET);
+
+    axios
+      .post(`${LD_DOMAIN}/trust/oidc/token`, params)
+      .then(function (tokenResponse) {
+        const data = tokenResponse.data;
+        req.session.oauthTokenData = {
+          access: data.access_token,
+          refresh: data.refresh_token,
+          expires: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : null,
+        };
+        if (data.id_token) {
+          req.session.idTokenRaw = data.id_token;
+          req.session.idTokenClaims = decodeJwtPayload(data.id_token);
+        }
+        res.redirect('/');
+      })
+      .catch((e) => res.send(e.message));
+  } else {
+    // Standard OAuth refresh
+    const token = launchDarklyAuth.createToken(
+      req.session.oauthTokenData.access,
+      req.session.oauthTokenData.refresh,
+      'bearer',
+    );
+    token
+      .refresh()
+      .then((updatedToken) => {
+        console.log('Token successfully updated:', updatedToken !== token); //=> true
+        console.log('New OAuth Token:', updatedToken.accessToken);
+        req.session.oauthTokenData = {
+          access: updatedToken.accessToken,
+          refresh: updatedToken.refreshToken,
+          expires: updatedToken.expires,
+        };
+        res.redirect('/');
+      })
+      .catch((e) => {
+        res.send(e.message);
+      });
+  }
+});
+
+// Fetch the OAuth Authorization Server Metadata (RFC 8414)
+app.get('/discovery', function (req, res) {
+  axios
+    .get(`${LD_DOMAIN}/.well-known/oauth-authorization-server`)
+    .then((response) => res.json(response.data))
+    .catch((e) => res.status(500).send(e.message));
+});
+
+// Fetch OIDC userinfo for the current session
+app.get('/userinfo', function (req, res) {
+  if (!req.session.oauthTokenData) return res.redirect('/');
+  axios
+    .get(`${LD_DOMAIN}/trust/oidc/userinfo`, {
+      headers: { Authorization: `Bearer ${req.session.oauthTokenData.access}` },
     })
-    .catch((e) => {
-      res.send(e.message);
-    });
+    .then((response) => res.json(response.data))
+    .catch((e) => res.status(500).send(e.message));
 });
 
 app.listen(PORT, () => console.log(`Example app listening on port ${PORT}!`));

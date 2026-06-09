@@ -27,3 +27,32 @@ ul {
 h1 {
   font-size: 28px;
 }
+
+pre.code-block {
+  background-color: #f4f4f4;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px;
+  overflow-x: auto;
+  max-height: 300px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+p.flow-indicator {
+  color: #666;
+  font-style: italic;
+  margin-bottom: 1rem;
+}
+
+ul.oidc-notes {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+}
+
+ul.oidc-notes li {
+  margin-bottom: 0.5rem;
+}

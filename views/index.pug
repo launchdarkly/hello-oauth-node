@@ -6,17 +6,50 @@ html
     div(class='container')
       h1= message
       if !loggedIn
-        h3
-          a(href="/auth") Authorize this app
+        div
+          h3 Choose an authentication flow:
+          ul
+            li
+              a(href="/auth") Standard OAuth 2.0
+              |  &mdash; uses #[code /trust/oauth/token], requests "writer" scope
+            li
+              a(href="/auth/oidc") OIDC Flow
+              |  &mdash; uses #[code /oidc/token], requests "openid writer" scopes, returns an ID token
+        div
+          h4 Server Discovery
+          p
+            a(href="/discovery") View OAuth Authorization Server Metadata
+            |  (#[code /.well-known/oauth-authorization-server])
       else
+        if isOidc
+          p.flow-indicator Authenticated via OIDC flow (openid scope)
+        else
+          p.flow-indicator Authenticated via standard OAuth 2.0 flow
         div
           h3= tokenMessage
           h4 This token expires #{expiresIn}. #[a(href="/refresh") Refresh it now]
+        if isOidc
+          div
+            h2 OIDC Information
+            h3 ID Token (JWT)
+            pre.code-block= idTokenRaw
+            h3 Decoded ID Token Claims
+            pre.code-block= idTokenClaims
+            h3 UserInfo Endpoint Response
+            pre.code-block= oidcUserInfo
+            p
+              a(href="/userinfo") Fetch /oidc/userinfo now
+            div
+              h4 Notes
+              ul.oidc-notes
+                li The ID token is a JWT signed with RS256 and has a very short expiry (~5 seconds). The claims above were decoded immediately upon receipt.
+                li The #[code sub] claim format is: #[code acct/{accountID}:member/{memberID}]
+                li The #[code /oidc/userinfo] endpoint returns user information in exchange for a valid access token.
         div
-          p 
-            | You can test LaunchDarkly GET requests using this app by navigating to 
-            | #[code /get/some-endpoint]. 
-          p For example: 
+          p
+            | You can test LaunchDarkly GET requests using this app by navigating to
+            | #[code /get/some-endpoint].
+          p For example:
           ul
             li #[a(href="/get/members/me") /get/members/me]
             li #[a(href="/get/projects/default") /get/projects/default]
@@ -24,6 +57,9 @@ html
             li #[a(href="/get/flags/default") /get/flags/default]
         div
           p To test with cURL, use:
-            pre= `curl -X GET ${apiUrl}/projects -H 'Authorization: Bearer ${token}'`
+            pre.code-block= `curl -X GET ${apiUrl}/projects -H 'Authorization: Bearer ${token}'`
+        div
+          h4 Server Discovery
+          a(href="/discovery") View /.well-known/oauth-authorization-server metadata
         div
           a(href="/logout") log out
